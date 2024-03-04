@@ -1,0 +1,5 @@
+bin/ 
+compile_flags.txt
+build/obj
+premake5.lua
+
