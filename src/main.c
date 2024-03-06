@@ -6,12 +6,15 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 SDL_Renderer *renderer;
 SDL_Event event;
@@ -46,8 +49,6 @@ void render() {
     double deltaDistX = fabs(1 / rayDirX);
     double deltaDistY = fabs(1 / rayDirY); // The distance the ray has to travel
                                            // to go to the next X and Y side
-    printf("[DEBUG] Current ray has to travel: %f %f. \n", deltaDistX,
-           deltaDistY);
 
     double perpWallDist; // Calculate the length of the ray from the plane
                          // current X to the wall
@@ -114,6 +115,12 @@ void render() {
       break;
     }
 
+    if (side == 0) {
+      color.red *= .6;
+      color.green *= .6;
+      color.blue *= .6;
+    }
+
     SDL_SetRenderDrawColor(renderer, color.red, color.green, color.blue, 1);
     SDL_RenderDrawLine(renderer, x, drawStart, x, drawEnd);
   }
@@ -135,6 +142,8 @@ int main() {
     double moveSpeed = frameTime * 5;
     double rotSpeed = frameTime * 3;
 
+    processKeyboard();
+
     SDL_PumpEvents();
 
     if (kbdState[SDL_SCANCODE_W]) {
@@ -150,7 +159,24 @@ int main() {
         posY -= dirY * moveSpeed;
     }
 
-    processKeyboard();
+    // New directions derived of a rotation matrix.
+    if (kbdState[SDL_SCANCODE_D]) {
+      double oldDirX = dirX;
+      dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
+      dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
+      double oldPlaneX = planeX;
+      planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
+      planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+    }
+    if (kbdState[SDL_SCANCODE_A]) {
+      double oldDirX = dirX;
+      dirX = dirX * cos(rotSpeed) - dirY * sin(rotSpeed);
+      dirY = oldDirX * sin(rotSpeed) + dirY * cos(rotSpeed);
+      double oldPlaneX = planeX;
+      planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
+      planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
+    }
+
     clearCanva();
     render();
     SDL_RenderPresent(renderer);

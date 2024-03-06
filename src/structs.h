@@ -2,9 +2,9 @@
 #define STRUCTS_H
 
 typedef struct {
-  char red;
-  char green;
-  char blue;
+  unsigned char red;
+  unsigned char green;
+  unsigned char blue;
 } Color;
 
 typedef struct {
