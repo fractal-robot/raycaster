@@ -1,8 +1,3 @@
-bin/ 
-compile_flags.txt
-build/obj
-premake5.lua
-
 odinfmt.json
 ols.json
 raycaster/src/src # the name of the executable

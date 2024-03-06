@@ -4,66 +4,45 @@ import "core:fmt"
 import "core:log"
 import "core:math"
 import "core:os"
+import "core:strings"
 import "vendor:sdl2"
-
-world := [24][24]int {
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 4, 0, 0, 0, 0, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 4, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-}
+import sdlImg "vendor:sdl2/image"
 
 WINDOW_WIDTH :: 1024
 WINDOW_HEIGHT :: 1024
 WINDOW_TITLE :: "window"
 WINDOW_FLAGS :: sdl2.WindowFlags{.SHOWN}
 
+TEXTURE_WIDTH :: 64
+TEXTURE_HEIGHT :: 64
+ATLAS_PATH :: "wolftextures.png"
 
 CTX :: struct {
 	window:      ^sdl2.Window,
 	renderer:    ^sdl2.Renderer,
+	framebuffer: ^sdl2.Surface,
 	event:       sdl2.Event,
 	keyboard:    []u8,
+	textures:    [dynamic]^sdl2.Texture,
 	shouldClose: bool,
 }
-
 ctx := CTX{}
 
 Vec2 :: distinct [2]f32
 Color :: [3]u8
-
 
 Player :: struct {
 	pos:   [2]f32,
 	dir:   [2]f32,
 	plane: [2]f32,
 }
-
 p := Player {
 	pos   = {22, 12},
 	dir   = {-1, 0},
 	plane = {0, 0.66},
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 init_sdl :: proc() -> (ok: bool) {
 	if sdlRes := sdl2.Init(sdl2.INIT_VIDEO); sdlRes < 0 {
@@ -96,7 +75,44 @@ init_sdl :: proc() -> (ok: bool) {
 		return false
 	}
 
+	ctx.framebuffer = sdl2.GetWindowSurface(ctx.window)
+	if ctx.framebuffer == nil {
+		log.errorf("[ERROR] sdl2.GetWindowSurface failed.")
+		return false
+	}
+
+	initRessources :: proc(imagePath: string) -> (ok: bool) {
+		path := strings.clone_to_cstring(imagePath)
+		texture := sdlImg.LoadTexture(ctx.renderer, path)
+		if texture == nil {
+			log.errorf("[ERROR] sdlImg.LoadTexture failed %v", imagePath)
+			return false
+		}
+		append(&ctx.textures, texture)
+		return true
+	}
+
+	initRessources(ATLAS_PATH)
+
 	return true
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+blit :: proc(texture: ^sdl2.Texture, x, y: i32, textureSelector: i32) {
+	dest: sdl2.Rect
+	dest.x = x
+	dest.y = y
+	dest.h = TEXTURE_HEIGHT
+	dest.w = TEXTURE_WIDTH
+
+	textureCoord: sdl2.Rect
+	textureCoord.x = textureSelector * i32(TEXTURE_WIDTH)
+	textureCoord.w = TEXTURE_WIDTH
+	textureCoord.h = TEXTURE_HEIGHT
+
+	// sdl2.QueryTexture(texture, nil, nil, &dest.w, &dest.h)
+	sdl2.RenderCopy(ctx.renderer, texture, &textureCoord, &dest)
 }
 
 get_time :: proc() -> f64 {
@@ -217,12 +233,19 @@ render :: proc() {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 processKeyboard :: proc() {
 	for sdl2.PollEvent(&ctx.event) {
 		#partial switch ctx.event.type {
 		case .QUIT:
 			ctx.shouldClose = true
 			return
+		case .KEYDOWN:
+			#partial switch (ctx.event.key.keysym.sym) {
+			case .ESCAPE:
+				ctx.shouldClose = true
+			}
 		}
 	}
 }
@@ -271,11 +294,20 @@ processMovements :: proc(frameTime: f32) {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
 clearCanva :: proc() {
 	sdl2.SetRenderDrawColor(ctx.renderer, 0, 0, 0, 1)
 	sdl2.RenderClear(ctx.renderer)
 }
+
+/*
+setWindowSurfacePixel :: proc(x, y: int, color: Color) {
+	pixel: ^u8 = u8^(&ctx.framebuffer.pixels)
+	pixel[4] = 255
+
+}
+*/
 
 main :: proc() {
 	context.logger = log.create_console_logger()
@@ -293,12 +325,15 @@ main :: proc() {
 		time = sdl2.GetTicks()
 		frameTime := f32(time - oldTime) / 1000
 
-
 		processKeyboard()
 		processMovements(frameTime)
 
 		clearCanva()
 		render()
+		blit(ctx.textures[0], WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 3)
 		sdl2.RenderPresent(ctx.renderer)
+		// sdl2.UpdateWindowSurface(ctx.window)
+
+
 	}
 }
